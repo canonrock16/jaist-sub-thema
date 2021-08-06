@@ -1,0 +1,15 @@
+
+
+# jupyterlab関連
+jupyterlab==3.1.4
+jupyterlab-vim==0.14.2
+lckr-jupyterlab-variableinspector==3.0.9
+jupyterlab-code-formatter==1.4.10
+dask-labextension==5.0.2
+
+# lint
+black
+isort
+flake8
+dask[complete]
+tqdm
