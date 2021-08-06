@@ -1,0 +1,16 @@
+services:
+  main:
+    build: .
+    container_name: sub-thema-main
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/code
+      - ./.jupyter:/root/.jupyter
+      - logvolume01:/var/log
+      - type: bind
+        source: ~/.ssh
+        target: /root/.ssh
+    tty: true
+volumes:
+  logvolume01: {}
