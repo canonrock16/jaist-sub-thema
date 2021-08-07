@@ -8,7 +8,7 @@ from surprise import Dataset, KNNBasic
 # 設定値
 core_num = 8
 k = 5
-predict_user_id = 1
+predict_user_id = 2
 
 
 comm = MPI.COMM_WORLD  # 並列処理開始
@@ -60,13 +60,13 @@ if rank == 0:
     # TODO:実行時に指定されたコア数で分割するように変更
     comb_list = np.array_split(comb, core_num - 1)
     for i in range(core_num - 1):
-        comm.Send(rate_matrix, dest=i + 1)
-        comm.Send(comb_list[i], dest=i + 1)
+        comm.send(rate_matrix, dest=i + 1,tag=0)
+        comm.send(comb_list[i], dest=i + 1,tag=1)
 
     # 類似度計算結果を格納するユーザー×ユーザー行列を作成
     sim_matrix = np.zeros((len(user_id2row_num), len(user_id2row_num)))
     for i in range(core_num - 1):
-        comm.Recv(sim_list, source=i + 1)
+        sim_list = comm.recv(source=i + 1)
         for s in sim_list:
             sim_matrix[s["comb"][0], s["comb"][1]] = s["sim"]
 
@@ -77,13 +77,14 @@ if rank == 0:
     topk_mean_ratings = np.mean(rate_matrix[top_k_rows, :], axis=0)
     for i in np.argsort(topk_mean_ratings)[::-1]:
         if rate_matrix[predict_row_num, i] == 0:
+            print('---result---')
             print(f"itemid:{column_num2item_id[i]},predicted_score:{topk_mean_ratings[i]}")
             break
 
 else:
     # 各プロセスは担当の組み合わせの類似度を計算し、プロセス0へ返信
-    comm.Recv(rate_matrix, source=0)
-    comm.Recv(calc_combs, source=0)
+    rate_matrix = comm.recv(source=0,tag=0)
+    calc_combs = comm.recv(source=0,tag=1)
 
     # コサイン類似度を計算
     sim_list = []
@@ -93,5 +94,6 @@ else:
         sim_dict["sim"] = cos_sim(rate_matrix[c[0]], rate_matrix[c[1]])
         sim_list.append(sim_dict)
 
-    comm.Send(sim_list, dest=0)
+    comm.send(sim_list, dest=0)
     print("Hello world {0} / {1}".format(rank, size))
+    print(f'#{rank}/{size} complete!')
