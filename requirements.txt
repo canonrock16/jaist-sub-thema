@@ -1,5 +1,3 @@
-
-
 # jupyterlab関連
 jupyterlab==3.1.4
 jupyterlab-vim==0.14.2
@@ -13,3 +11,7 @@ isort
 flake8
 dask[complete]
 tqdm
+
+mpi4py==3.0.3
+numpy
+scikit-surprise
