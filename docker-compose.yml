@@ -5,12 +5,15 @@ services:
     ports:
       - "8888:8888"
     volumes:
+      # - .:/user/src
       - .:/root/src
+      # - ./.jupyter:/user/.jupyter
       - ./.jupyter:/root/.jupyter
       # dockerの機能でlogvolumeという領域にlogを保存してくれるようだが、中身を見るのは有料プラン限定
       - logvolume01:/var/log
       - type: bind
         source: ~/.ssh
+        # target: /user/.ssh
         target: /root/.ssh
     tty: true
 volumes:
