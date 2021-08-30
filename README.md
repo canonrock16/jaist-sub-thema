@@ -29,5 +29,5 @@ jupyter lab --ip=0.0.0.0 --allow-root --NotebookApp.token='' --NotebookApp.passw
 
 ```bash
 # 自宅PCは最大8コア。それ以上を指定するとエラー
-mpiexec -n 8 --allow-run-as-root python mpi_test.py
+mpiexec -n 8 --allow-run-as-root python paralleled_collaborative_filtering.py
 ```
