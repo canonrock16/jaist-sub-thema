@@ -29,30 +29,75 @@ def main(predict_user_id: int = 2, k: int = 5) -> None:
         print('組み合わせ列挙にかかった時間',MPI.Wtime() - start_make_combination)
 
         # それぞれのコアにできるだけ均等になるように担当の組み合わせを配布
-        start_distribution = MPI.Wtime()
-        comb_list = np.array_split(comb, size - 1)
-        for i in range(size - 1):
-            a = comm.isend(rate_matrix, dest=i + 1, tag=0)
-            b = comm.isend(comb_list[i], dest=i + 1, tag=1)
-        print('各コアへの組み合わせ配布にかかった時間',MPI.Wtime() - start_distribution)
+        # comb_list = np.array_split(comb, size - 1)
+        comb_list = np.array_split(comb, size)
+    else:
+        rate_matrix = None
+        comb_list= None
 
+    start_distribution = MPI.Wtime()
+    rate_matrix = comm.bcast(rate_matrix,root=0)
+    comb_list = comm.bcast(comb_list,root=0)
+    print('各コアへの組み合わせ配布にかかった時間',MPI.Wtime() - start_distribution)
+
+
+    # if rank != 0:
+    # start_receive_p = MPI.Wtime()
+    # 各プロセスは担当の組み合わせの類似度を計算し、プロセス0へ返信
+    # rate_matrix = comm.irecv(source=0, tag=0)
+    # calc_combs = comm.irecv(source=0, tag=1)
+    # print(f'プロセス{rank}がデータを受け取るのにかかった時間',MPI.Wtime() - start_receive_p)
+
+    # for i in range(size - 1):
+        # a = comm.isend(rate_matrix, dest=i + 1, tag=0)
+        # b = comm.isend(comb_list[i], dest=i + 1, tag=1)
+
+    # calc_combs = comb_list[rank-1]
+    calc_combs = comb_list[rank]
+
+    # rate_matrix.wait()
+    # calc_combs.wait()
+    start_calc_sim= MPI.Wtime()
+    # コサイン類似度を計算
+    sim_list = []
+    for c in calc_combs:
+        sim_dict = {}
+        sim_dict["comb"] = c
+        sim_dict["sim"] = cos_sim(rate_matrix[c[0]], rate_matrix[c[1]])
+        sim_list.append(sim_dict)
+    print(f'プロセス{rank}がコサイン類似度を計算するのにかかった時間',MPI.Wtime() - start_calc_sim)
+
+    # start_isend = MPI.Wtime()
+    # comm.isend(sim_list, dest=0)
+    # print(f'プロセス{rank}の結果を送信するのにかかった時間',MPI.Wtime() - start_isend)
+
+    print("Hello world {0} / {1}".format(rank, size-1))
+    # print(f"#{rank}/{size-1} complete!")
+    print(f"#{rank}/{size} complete!")
+
+
+    results = comm.gather(sim_list,root=0)
+    # print(len(results))
+
+    if rank==0:
         # 類似度計算結果を格納するユーザー×ユーザー行列を作成
         start_user_matrix = MPI.Wtime()
         sim_matrix = np.zeros((len(user_id2row_num), len(user_id2row_num)))
         print('結果格納行列を作るのにかかった時間',MPI.Wtime() - start_user_matrix)
 
+        # sim_list = None
+        # print(sim_list)
 
-        a.wait()
-        b.wait()
-        for i in range(size - 1):
+        # for i in range(size - 1):
             # start_receive = MPI.Wtime()
-            sim_list = comm.irecv(source=i + 1)
+            # sim_list = comm.irecv(source=i + 1)
             # print(f'プロセス{i+1}から計算結果を受け取るのにかかった時間',MPI.Wtime() - start_receive)
-            sim_list.wait()
-            start_housing = MPI.Wtime()
-            for s in sim_list:
+            # sim_list.wait()
+        start_housing = MPI.Wtime()
+        for result in results:
+            for s in result:
                 sim_matrix[s["comb"][0], s["comb"][1]] = s["sim"]
-            print(f'プロセス{i+1}の結果を格納するのにかかった時間',MPI.Wtime() - start_housing)
+            print(f'全ての結果を格納するのにかかった時間',MPI.Wtime() - start_housing)
 
         # 類似度が上位k件のユーザーIDリストを作成
         start_topk = MPI.Wtime()
@@ -71,31 +116,6 @@ def main(predict_user_id: int = 2, k: int = 5) -> None:
         elapsed_time = MPI.Wtime() - start
         print(f"elapsed_time:{elapsed_time}[sec]")
 
-    else:
-        # start_receive_p = MPI.Wtime()
-        # 各プロセスは担当の組み合わせの類似度を計算し、プロセス0へ返信
-        rate_matrix = comm.irecv(source=0, tag=0)
-        calc_combs = comm.irecv(source=0, tag=1)
-        # print(f'プロセス{rank}がデータを受け取るのにかかった時間',MPI.Wtime() - start_receive_p)
-
-        rate_matrix.wait()
-        calc_combs.wait()
-        start_calc_sim= MPI.Wtime()
-        # コサイン類似度を計算
-        sim_list = []
-        for c in calc_combs:
-            sim_dict = {}
-            sim_dict["comb"] = c
-            sim_dict["sim"] = cos_sim(rate_matrix[c[0]], rate_matrix[c[1]])
-            sim_list.append(sim_dict)
-        print(f'プロセス{rank}がコサイン類似度を計算するのにかかった時間',MPI.Wtime() - start_calc_sim)
-
-        start_isend = MPI.Wtime()
-        comm.isend(sim_list, dest=0)
-        print(f'プロセス{rank}の結果を送信するのにかかった時間',MPI.Wtime() - start_isend)
-
-        print("Hello world {0} / {1}".format(rank, size-1))
-        print(f"#{rank}/{size-1} complete!")
 
 if __name__ == "__main__":
     fire.Fire(main)
