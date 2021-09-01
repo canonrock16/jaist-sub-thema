@@ -97,7 +97,7 @@ def main(predict_user_id: int = 2, k: int = 5) -> None:
         for result in results:
             for s in result:
                 sim_matrix[s["comb"][0], s["comb"][1]] = s["sim"]
-            print(f'全ての結果を格納するのにかかった時間',MPI.Wtime() - start_housing)
+	print(f'全ての結果を格納するのにかかった時間',MPI.Wtime() - start_housing)
 
         # 類似度が上位k件のユーザーIDリストを作成
         start_topk = MPI.Wtime()
