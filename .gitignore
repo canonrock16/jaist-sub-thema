@@ -130,3 +130,4 @@ dmypy.json
 .jupyter/lab/workspaces/
 pyproject.toml
 poetry.lock
+logs
