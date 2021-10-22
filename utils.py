@@ -51,8 +51,8 @@ class MovieLensDataSet:
         topk_mean_ratings = np.mean(self.rate_matrix[top_k_rows, :], axis=0)
         for i in np.argsort(topk_mean_ratings)[::-1]:
             if self.rate_matrix[predict_row_num, i] == 0:
-                print("---result---")
-                print(f"itemid:{self.column_num2item_id[i]},predicted_score:{topk_mean_ratings[i]}")
+                # print("---result---")
+                # print(f"itemid:{self.column_num2item_id[i]},predicted_score:{topk_mean_ratings[i]}")
                 break
 
 
