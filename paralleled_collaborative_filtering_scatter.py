@@ -29,7 +29,7 @@ def main(predict_user_id: int = 2, k: int = 5) -> None:
     start_distribution = MPI.Wtime()
     rate_matrix = comm.bcast(rate_matrix, root=0)
     comb_list = comm.scatter(comb_list, root=0)
-    print("プロセス{rank}への組み合わせ配布にかかった時間,", MPI.Wtime() - start_distribution)
+    print(f"プロセス{rank}への組み合わせ配布にかかった時間,", MPI.Wtime() - start_distribution)
 
     start_calc_sim = MPI.Wtime()
     sim_list = calc_cos_sim(calc_combs=comb_list, rate_matrix=rate_matrix, rank=rank)
@@ -42,7 +42,7 @@ def main(predict_user_id: int = 2, k: int = 5) -> None:
     if rank == 0:
         start_housing = MPI.Wtime()
         # 類似度計算結果を格納するユーザー×ユーザー行列を作成
-        sim_matrix = np.zeros((len(dataset.user_id2row_num), len(dataset.user_id2row_num)))
+        sim_matrix = np.zeros((len(dataset.user_id2row_num), len(dataset.user_id2row_num)), dtype="int32")
 
         for result in results:
             for s in result:

@@ -1,4 +1,5 @@
 import itertools
+import sys
 
 import numpy as np
 import pandas as pd
@@ -7,8 +8,11 @@ from mpi4py import MPI
 
 class MovieLensDataSet:
     def __init__(self) -> None:
+        # self.data = pd.read_csv("ml-25m/ratings.csv", header=0, usecols=[0, 1, 2], names=["user_id", "item_id", "rating"])
+        df = pd.read_table("ml-10M100K/ratings.dat", sep="::", header=None, usecols=[0, 1, 2], names=["user_id", "item_id", "rating"])
+        self.data = df.iloc[:len(df)//10].copy()
         # self.data = pd.read_table("ml-1m/ratings.dat", sep="::", header=None, usecols=[0, 1, 2], names=["user_id", "item_id", "rating"])
-        self.data = pd.read_table("ml-100k/u.data", header=None, usecols=[0, 1, 2], names=["user_id", "item_id", "rating"])
+        # self.data = pd.read_table("ml-100k/u.data", header=None, usecols=[0, 1, 2], names=["user_id", "item_id", "rating"])
 
         self.user_id2row_num = {}
         self.row_num2user_id = {}
@@ -28,10 +32,12 @@ class MovieLensDataSet:
             self.column_num2item_id[i] = item_id
 
         # ユーザー×アイテムの評価行列を作成
-        self.rate_matrix = np.zeros((len(self.user_id2row_num), len(self.item_id2column_num)))
+        self.rate_matrix = np.zeros((len(self.user_id2row_num), len(self.item_id2column_num)),dtype = 'int32')
         # for row in tqdm(data.itertuples(), total=data.shape[0]):
         for row in self.data.itertuples():
             self.rate_matrix[self.user_id2row_num[row.user_id], self.item_id2column_num[row.item_id]] = row.rating
+
+        # print("rate_matrixのサイズ", sys.getsizeof(self.rate_matrix))
 
         return self.rate_matrix
 
@@ -40,6 +46,8 @@ class MovieLensDataSet:
         row_list = [i for i in range(len(self.row_num2user_id))]
         comb = [c for c in itertools.combinations(row_list, 2)]
         comb_list = np.array_split(comb, size)
+
+        # print("comb_list全量のサイズ", sys.getsizeof(comb_list))
 
         return comb_list
 
@@ -57,7 +65,9 @@ class MovieLensDataSet:
 
 
 def cos_sim(v1, v2):
-    return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+    # return np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+    sim =  np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2))
+    return sim.astype('float16')
 
 
 def calc_cos_sim(calc_combs, rate_matrix, rank):

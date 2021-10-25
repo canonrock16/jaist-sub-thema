@@ -36,14 +36,14 @@ def main(predict_user_id: int = 2, k: int = 5) -> None:
         start_gather = MPI.Wtime()
         results = []
         results.append(sim_list)
-        buf = bytearray(1 << 25)
+        buf = bytearray(1 << 35)
         for i in range(1, size):
             results.append(comm.irecv(buf, source=i).wait())
         print(f"結果を収集するのにかかった時間,", MPI.Wtime() - start_gather)
 
         start_housing = MPI.Wtime()
         # 類似度計算結果を格納するユーザー×ユーザー行列を作成
-        sim_matrix = np.zeros((len(dataset.user_id2row_num), len(dataset.user_id2row_num)))
+        sim_matrix = np.zeros((len(dataset.user_id2row_num), len(dataset.user_id2row_num)), dtype="int32")
 
         for result in results:
             for s in result:
@@ -58,7 +58,7 @@ def main(predict_user_id: int = 2, k: int = 5) -> None:
         print(f"elapsed_time,{elapsed_time}")
 
     if rank != 0:
-        buf = bytearray(1 << 25)
+        buf = bytearray(1 << 35)
         a = comm.irecv(buf, source=0, tag=0)
         b = comm.irecv(buf, source=0, tag=1)
         rate_matrix = a.wait()
@@ -68,7 +68,7 @@ def main(predict_user_id: int = 2, k: int = 5) -> None:
         sim_list = calc_cos_sim(calc_combs=comb_list[rank], rate_matrix=rate_matrix, rank=rank)
         print(f"プロセス{rank}がコサイン類似度を計算するのにかかった時間,", MPI.Wtime() - start_calc_sim)
 
-        comm.isend(sim_list, dest=0)
+        comm.isend(sim_list, dest=0).wait()
 
 
 if __name__ == "__main__":

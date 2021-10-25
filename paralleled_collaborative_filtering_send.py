@@ -42,7 +42,7 @@ def main(predict_user_id: int = 2, k: int = 5) -> None:
 
         start_housing = MPI.Wtime()
         # 類似度計算結果を格納するユーザー×ユーザー行列を作成
-        sim_matrix = np.zeros((len(dataset.user_id2row_num), len(dataset.user_id2row_num)))
+        sim_matrix = np.zeros((len(dataset.user_id2row_num), len(dataset.user_id2row_num)), dtype="int32")
 
         for result in results:
             for s in result:
