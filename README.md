@@ -31,3 +31,22 @@ jupyter lab --ip=0.0.0.0 --allow-root --NotebookApp.token='' --NotebookApp.passw
 # 自宅PCは最大8コア。それ以上を指定するとエラー
 mpiexec -n 8 --allow-run-as-root python paralleled_collaborative_filtering.py
 ```
+
+- KAGAYAKI での実行方法
+
+```shell
+ssh __KAGAYAKI
+# シングルノードでの並列化の時
+qsub -I -q SMALL
+# マルチノードでの並列化の時
+qsub -I -q SMALL -l select=2:ncpus=128:mpiprocs=128
+
+# isendの時だけロードが必要
+module load openmpi/4.1.1/gcc
+sh kick.sh
+```
+
+## 注意
+
+- poetry はローカルの vscode でコードを書く用のため、パッケージの追加は行わない
+  - mpi4py は何らかの MPI 実装が先にインストールされていないと入らない。従って、mac 上で動く poetry からは入れられない。
